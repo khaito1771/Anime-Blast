@@ -143,11 +143,12 @@ function setup() {
 
 // ---------------- CENTER CANVAS ----------------
 function centerCanvas() {
+  let c = document.querySelector("canvas");
+  if (!c) return; // canvas not created yet — safe exit
   const TOUCH_RESERVE = window.innerWidth < 768 ? 130 : 0;
   let x = (windowWidth  - width)  / 2;
   let y = (windowHeight - TOUCH_RESERVE - height) / 2;
-  y = Math.max(0, y); // never go above screen
-  let c = document.querySelector("canvas");
+  y = Math.max(0, y);
   c.style.position = "absolute";
   c.style.left = x + "px";
   c.style.top  = y + "px";
@@ -163,11 +164,8 @@ function windowResized() {
 function startLevel() {
   bombs = [];
   explosions = [];
-  playerInvul = 0;
   createGrid();
-  // Preserve lives when advancing levels; only reset on a fresh game (level 1)
-  let currentLives = (player && level > 1) ? player.lives : 3;
-  player = { x: 1, y: 1, lives: currentLives };
+  player = { x: 1, y: 1, lives: 3 };
   createEnemies();
 
   // Start tutorial only on level 1
@@ -538,14 +536,14 @@ function drawSpacebarKey(cx, cy) {
 // ---------------- TUTORIAL UPDATE ----------------
 function updateTutorial() {
   // Bombs still tick during tutorial so explosion step can complete
-  for (let i = bombs.length - 1; i >= 0; i--) {
-    bombs[i].timer--;
-    if (bombs[i].timer <= 0) {
-      explode(bombs[i]);
+  bombs.forEach((b, i) => {
+    b.timer--;
+    if (b.timer <= 0) {
+      explode(b);
       bombs.splice(i, 1);
       tutorialBombExploded = true;
     }
-  }
+  });
 
   if (bombs.length > 0) {
     if (!tickSound.isPlaying()) tickSound.loop();
@@ -633,13 +631,13 @@ function updateGame() {
   // Tick down invulnerability
   if (playerInvul > 0) playerInvul--;
 
-  for (let i = bombs.length - 1; i >= 0; i--) {
-    bombs[i].timer--;
-    if (bombs[i].timer <= 0) {
-      explode(bombs[i]);
+  bombs.forEach((b, i) => {
+    b.timer--;
+    if (b.timer <= 0) {
+      explode(b);
       bombs.splice(i, 1);
     }
-  }
+  });
 
   // Tick only if bomb exists
   if (bombs.length > 0) {
@@ -670,7 +668,7 @@ function updateGame() {
       // Try preferred direction first, then fallback — block if another enemy is there
       if (abs(dx) > abs(dy)) {
         let tx = e.x + moveX, ty = e.y;
-        if (tx >= 0 && tx < COLS && grid[ty][tx] === "empty" && !isEnemyAt(tx, ty)) {
+        if (grid[ty][tx] === "empty" && !isEnemyAt(tx, ty)) {
           e.x = tx;
         } else {
           tx = e.x; ty = e.y + moveY;
@@ -684,7 +682,7 @@ function updateGame() {
           e.y = ty;
         } else {
           tx = e.x + moveX; ty = e.y;
-          if (tx >= 0 && tx < COLS && grid[ty][tx] === "empty" && !isEnemyAt(tx, ty)) {
+          if (grid[ty][tx] === "empty" && !isEnemyAt(tx, ty)) {
             e.x = tx;
           }
         }
@@ -733,7 +731,6 @@ function explode(bomb) {
   ];
 
   tiles.forEach((t) => {
-    if (gameState === "gameover") return; // stop processing after death
     if (grid[t.y] && grid[t.y][t.x] !== "wall") {
       explosions.push({ x: t.x, y: t.y, timer: 30 }); // 30 frames ≈ 0.5s
 
@@ -769,8 +766,6 @@ function explode(bomb) {
           showGameOver();
           if (typeof showNameEntry === "function") showNameEntry(score);
           gameState = "gameover";
-        } else {
-          playerInvul = INVUL_FRAMES;
         }
       }
     }
