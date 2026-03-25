@@ -33,15 +33,21 @@ function movePlayer(nx, ny) {
 
 // ---------------- PLAYER HIT ----------------
 function playerHit() {
+  if (playerInvul > 0) return; // ignore hit during invulnerability frames
   player.lives--;
   player.x = 1;
   player.y = 1;
   
   if (player.lives <= 0) {
-    if (typeof gameOverSound !== 'undefined' && gameOverSound) {
-      gameOverSound.play();
-    }
+    if (typeof bgMusic !== 'undefined' && bgMusic && bgMusic.isPlaying()) bgMusic.stop();
+    if (typeof tickSound !== 'undefined' && tickSound && tickSound.isPlaying()) tickSound.stop();
+    if (typeof explosionSound !== 'undefined' && explosionSound && explosionSound.isPlaying()) explosionSound.stop();
+    if (typeof gameOverSound !== 'undefined' && gameOverSound) gameOverSound.play();
+    if (typeof showGameOver === 'function') showGameOver();
+    if (typeof showNameEntry === 'function') showNameEntry(score);
     gameState = "gameover";
+  } else {
+    playerInvul = INVUL_FRAMES;
   }
 }
 

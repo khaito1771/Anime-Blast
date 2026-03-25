@@ -1,18 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Anime Blast Arena</title>
 
-    <title>Sketch</title>
+<!-- Favicon — replace assets/logo.png with your actual logo file -->
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="apple-touch-icon" href="assets/logo.png">
 
-    <link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" href="style.css">
+<script src="libraries/p5.min.js"></script>
+<script src="libraries/p5.sound.min.js"></script>
+</head>
 
-    <script src="libraries/p5.min.js"></script>
-    <script src="libraries/p5.sound.min.js"></script>
-  </head>
+<body>
 
-  <body>
-    <script src="sketch.js"></script>
-  </body>
+<!-- HOME SCREEN -->
+<div id="homeScreen">
+
+  <!-- Fullscreen blurred background video -->
+  <video id="homeVideoBg" autoplay muted loop>
+    <source src="assets/home.mp4" type="video/mp4">
+  </video>
+
+  <!-- Smaller HD menu video on top -->
+  <video id="homeVideo" autoplay muted loop>
+    <source src="assets/home.mp4" type="video/mp4">
+  </video>
+
+  <!-- Menu UI -->
+  <div id="menuUI">
+    <div class="menu-btn-wrap"><img id="playBtnImg" src="assets/play button.png" alt="Play Button"></div>
+    <div class="menu-btn-wrap"><img id="leaderboardBtnImg" src="assets/leaderboard.png" alt="Leaderboard Button"></div>
+    <div class="menu-btn-wrap"><img id="settingsBtnImg" src="assets/settings.png" alt="Settings Button"></div>
+  </div>
+
+  <!-- Leaderboard Popup (home screen only) -->
+  <div id="leaderboardPopup">
+    <div class="leaderboard-panel">
+      <div class="leaderboard-header">🏆 LEADERBOARD</div>
+      <div id="leaderboardList"></div>
+      <button id="closeLeaderboard">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- Settings Popup (home screen only) -->
+  <div id="settingsPopup">
+    <div class="settings-panel">
+      <div class="gear gear-left">⚙️</div>
+      <div class="gear gear-right">⚙️</div>
+      <div class="settings-header">SETTINGS</div>
+      <div class="setting-card">
+        <span>Sound</span>
+        <div class="slider-wrap">
+          <input type="range" id="soundRange" min="0" max="100" value="70">
+        </div>
+      </div>
+      <div class="setting-card">
+        <span>Music</span>
+        <div class="slider-wrap">
+          <input type="range" id="musicRange" min="0" max="100" value="50">
+        </div>
+      </div>
+      <button id="closeSettings">CLOSE</button>
+    </div>
+  </div>
+
+</div><!-- END HOME SCREEN -->
+
+<!-- ================================================ -->
+<!-- GAME UI — lives outside homeScreen div           -->
+<!-- Only visible after game starts                   -->
+<!-- ================================================ -->
+
+
+<!-- Pause Menu Overlay -->
+<div id="pauseMenuOverlay" style="display:none;">
+  <div class="pause-panel">
+    <div class="pause-header">⏸ PAUSED</div>
+    <button class="pause-menu-btn resume-btn"         id="resumeBtn">▶ RESUME</button>
+    <button class="pause-menu-btn restart-btn"        id="restartBtn">↺ RESTART</button>
+    <button class="pause-menu-btn settings-pause-btn" id="settingsPauseBtn">⚙ SETTINGS</button>
+    <button class="pause-menu-btn mainmenu-btn"       id="mainMenuBtn">⌂ MAIN MENU</button>
+  </div>
+</div>
+
+<!-- In-game Settings Popup (opened from pause menu) -->
+<div id="settingsPopupGame" style="display:none;">
+  <div class="settings-panel">
+    <div class="gear gear-left">⚙️</div>
+    <div class="gear gear-right">⚙️</div>
+    <div class="settings-header">SETTINGS</div>
+    <div class="setting-card">
+      <span>Sound</span>
+      <div class="slider-wrap">
+        <input type="range" id="soundRangeGame" min="0" max="100" value="70">
+      </div>
+    </div>
+    <div class="setting-card">
+      <span>Music</span>
+      <div class="slider-wrap">
+        <input type="range" id="musicRangeGame" min="0" max="100" value="50">
+      </div>
+    </div>
+    <button id="closeSettingsGame">CLOSE</button>
+  </div>
+</div>
+
+<!-- Game Over Overlay -->
+<div id="gameOverOverlay" style="display:none;">
+  <div class="gameover-panel">
+    <div class="gameover-skull">💀</div>
+    <div class="gameover-title">GAME OVER</div>
+    <div class="gameover-score" id="gameOverScoreDisplay"></div>
+    <div class="gameover-level" id="gameOverLevelDisplay"></div>
+    <div class="gameover-buttons">
+      <button class="gameover-btn gameover-restart-btn" id="gameOverRestartBtn">↺ RESTART</button>
+      <button class="gameover-btn gameover-menu-btn"    id="gameOverMenuBtn">⌂ MAIN MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game Over — Name Entry Popup -->
+<div id="nameEntryPopup" style="display:none;">
+  <div class="name-entry-panel">
+    <div class="name-entry-header">💀 GAME OVER</div>
+    <div class="name-entry-score" id="finalScoreDisplay"></div>
+    <input type="text" id="playerNameInput" placeholder="Enter your name..." maxlength="16" />
+    <button id="submitScoreBtn">SUBMIT SCORE</button>
+    <button id="skipScoreBtn">SKIP</button>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<!-- Both firebase.js and leaderboard.js are type=module -->
+<!-- Modules are deferred automatically, so DOM is ready when they run -->
+<script type="module" src="firebase.js"></script>
+<script src="menu.js"></script>
+<script src="enemy.js"></script>
+<script src="sketch.js"></script>
+<script type="module" src="leaderboard.js"></script>
+
+<!-- MOBILE TOUCH CONTROLS — only shown on small screens via CSS -->
+<div id="touchControls" style="display:none;">
+  <div id="dpad">
+    <button class="dpad-btn dpad-up"    ontouchstart="handleTouchMove('up');return false;"    onmousedown="handleTouchMove('up')">▲</button>
+    <button class="dpad-btn dpad-left"  ontouchstart="handleTouchMove('left');return false;"  onmousedown="handleTouchMove('left')">◀</button>
+    <button class="dpad-btn dpad-center"></button>
+    <button class="dpad-btn dpad-right" ontouchstart="handleTouchMove('right');return false;" onmousedown="handleTouchMove('right')">▶</button>
+    <button class="dpad-btn dpad-down"  ontouchstart="handleTouchMove('down');return false;"  onmousedown="handleTouchMove('down')">▼</button>
+  </div>
+  <button id="bombBtn" ontouchstart="handleTouchBomb();return false;" onmousedown="handleTouchBomb()">💣</button>
+</div>
+</body>
 </html>
